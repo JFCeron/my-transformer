@@ -1,20 +1,29 @@
 from typing import Iterator
 
 import torch
-import transformers
+from transformers import BertTokenizer, CamembertTokenizer
 
 TXT_FILE_PATH = "data/eng-fra.txt"
+MAX_SEQ_LEN = 20
+EN_TOKENIZER_ID = "bert-base-uncased"
+FR_TOKENIZER_ID = "camembert-base"
+
+def get_en_tokenizer():
+    return BertTokenizer.from_pretrained(
+        EN_TOKENIZER_ID,
+        model_max_length=MAX_SEQ_LEN
+    )
+
+def get_fr_tokenizer():
+    return CamembertTokenizer.from_pretrained(
+        FR_TOKENIZER_ID,
+        model_max_length=MAX_SEQ_LEN
+    )
 
 class En2FrDataset(torch.utils.data.IterableDataset):
-    def __init__(self, max_seq_len):
-        self.en_tokenizer = transformers.BertTokenizer.from_pretrained(
-            "bert-base-uncased",
-            model_max_length=max_seq_len
-        )
-        self.fr_tokenizer = transformers.CamembertTokenizer.from_pretrained(
-            "camembert-base",
-            model_max_length=max_seq_len
-        )
+    def __init__(self):
+        self.en_tokenizer = get_en_tokenizer()
+        self.fr_tokenizer = get_fr_tokenizer()
 
     @property
     def input_vocab_size(self):

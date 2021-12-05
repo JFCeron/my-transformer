@@ -63,7 +63,7 @@ def main():
         help="Learning rate"
     )
     args = parser.parse_args()
-    dataset = En2FrDataset(max_seq_len=20)
+    dataset = En2FrDataset()
     experiment = Experiment(args.exp_name)
     model = Transformer(
         experiment=experiment,
