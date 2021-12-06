@@ -95,8 +95,17 @@ class Transformer(torch.nn.Module):
         tgt = tokenize("", self.fr_tokenizer)
         tgt = tgt.view(1, -1)
         tgt = tgt.to(device)
-        fwd_pass = self.forward(src, tgt)
-        raise NotImplementedError()
+        n_decoded_tokens = 0
+        while True:
+            logits = self.forward(src, tgt)
+            next_step_logits = logits[0,:,n_decoded_tokens]
+            next_token = torch.argmax(next_step_logits)
+            n_decoded_tokens += 1
+            tgt[0][n_decoded_tokens] = next_token
+            if next_token == self.fr_tokenizer.eos_token_id \
+               or n_decoded_tokens + 1 >= self.fr_tokenizer.model_max_length:
+               break
+        return self.fr_tokenizer.decode(tgt)
 
     @property
     def en_tokenizer(self):
@@ -111,13 +120,13 @@ class Transformer(torch.nn.Module):
         return self._fr_tokenizer
 
     def save(self):
-        new_model_id = datetime.now().strftime("%Y-%m-%d_%M-%S")
+        new_model_id = datetime.now().strftime("%Y-%m-%d_%H-%M")
         model_dir_args = {"exp_name": self.exp_name, "model_id": new_model_id}
         model_args_path = self.MODEL_ARGS_PATH.format(**model_dir_args)
         weights_path = self.WEIGHTS_PATH.format(**model_dir_args)
         parent_dir = os.path.dirname(model_args_path)
         os.makedirs(parent_dir)
-        torch.save(self, weights_path)
+        torch.save(self.state_dict(), weights_path)
         with open(model_args_path, "w") as model_args_file:
             model_args = {
                 "exp_name": self.exp_name,
@@ -141,8 +150,7 @@ class Transformer(torch.nn.Module):
             model_args_str = model_args_file.read()
             model_args = json.loads(model_args_str)
             transformer = Transformer(**model_args)
-        # Get weights from .pt file
+        # Load weights
         weights_path = cls.WEIGHTS_PATH.format(**model_dir_args)
-        loaded = torch.load(weights_path)
-        transformer.load_state_dict(loaded.state_dict())
+        transformer.load_state_dict(torch.load(weights_path))
         return transformer
