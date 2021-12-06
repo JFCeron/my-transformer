@@ -4,7 +4,7 @@ import torch
 from transformers import BertTokenizer, CamembertTokenizer
 
 TXT_FILE_PATH = "data/eng-fra.txt"
-MAX_SEQ_LEN = 20
+MAX_SEQ_LEN = 30
 EN_TOKENIZER_ID = "bert-base-uncased"
 FR_TOKENIZER_ID = "camembert-base"
 
@@ -24,6 +24,7 @@ def tokenize(text, tokenizer):
     tokens = tokenizer.encode(
         text,
         padding="max_length",
+        truncation=True,
         return_tensors="pt"
     )
     return torch.squeeze(tokens)

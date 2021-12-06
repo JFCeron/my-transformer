@@ -22,6 +22,8 @@ class Transformer(torch.nn.Module):
         self.d_model = d_model
         self.num_heads = num_heads
         self.dropout = dropout
+        self.n_en_words = n_en_words
+        self.n_fr_words = n_fr_words
         # Source and target language embeddings
         self.en_embedding = torch.nn.Embedding(n_en_words, self.d_model)
         self.fr_embedding = torch.nn.Embedding(n_fr_words, self.d_model)
@@ -32,7 +34,8 @@ class Transformer(torch.nn.Module):
                 torch.nn.TransformerEncoderLayer(
                     d_model=d_model,
                     nhead=num_heads,
-                    dropout=dropout
+                    dropout=dropout,
+                    batch_first=True
                 )
             )
         # Decoder layers
@@ -42,7 +45,8 @@ class Transformer(torch.nn.Module):
                 torch.nn.TransformerDecoderLayer(
                     d_model=d_model,
                     nhead=num_heads,
-                    dropout=dropout
+                    dropout=dropout,
+                    batch_first=True
                 )
             )
         self.linear = torch.nn.Linear(d_model, n_fr_words)
@@ -52,7 +56,8 @@ class Transformer(torch.nn.Module):
 
     def forward(self, src, tgt):
         # Define masks
-        src_padding_mask, tgt_padding_mask, tgt_mask = self.get_masks(src, tgt)
+        src_padding_mask, tgt_padding_mask, tgt_mask = self.get_masks(
+            src, tgt, src.device)
         # Encode source sentence
         encoded_src = self.en_embedding(src)
         for encoder_layer in self.encoder_layers:
@@ -74,10 +79,13 @@ class Transformer(torch.nn.Module):
         pred = pred.permute(0, 2, 1)
         return pred
 
-    def get_masks(self, src, tgt):
+    def get_masks(self, src, tgt, device):
         src_padding_mask = (src == self.en_tokenizer.pad_token_id)
+        src_padding_mask = src_padding_mask.to(device)
         tgt_padding_mask = (tgt == self.fr_tokenizer.pad_token_id)
-        tgt_mask = generate_square_subsequent_mask(tgt.shape[1])
+        tgt_padding_mask = tgt_padding_mask.to(device)
+        tgt_mask = torch.nn.Transformer.generate_square_subsequent_mask(tgt.shape[1])
+        tgt_mask = tgt_mask.to(device)
         return src_padding_mask, tgt_padding_mask, tgt_mask
 
     def greedy_decode(self, str_src, device):
@@ -103,7 +111,7 @@ class Transformer(torch.nn.Module):
         return self._fr_tokenizer
 
     def save(self):
-        new_model_id = datetime.now().strftime("%Y-%m-%d_%M-%S.pt")
+        new_model_id = datetime.now().strftime("%Y-%m-%d_%M-%S")
         model_dir_args = {"exp_name": self.exp_name, "model_id": new_model_id}
         model_args_path = self.MODEL_ARGS_PATH.format(**model_dir_args)
         weights_path = self.WEIGHTS_PATH.format(**model_dir_args)
@@ -138,14 +146,3 @@ class Transformer(torch.nn.Module):
         loaded = torch.load(weights_path)
         transformer.load_state_dict(loaded.state_dict())
         return transformer
-
-def generate_square_subsequent_mask(seq_size: int):
-    """Generate a square mask for the sequence. The masked positions are filled
-    with float('-inf'). Unmasked positions are filled with float(0.0).
-
-    Pulled from PyTorch source code:
-    https://github.com/pytorch/pytorch/blob/176174a68ba2d36b9a5aaef0943421682ecc66d4/torch/nn/modules/transformer.py#L130
-    """
-    mask = (torch.triu(torch.ones(seq_size, seq_size)) == 1).transpose(0, 1)
-    mask = mask.masked_fill(mask == 0, 1).masked_fill(mask == 1, 0).byte()
-    return mask
