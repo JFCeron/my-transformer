@@ -6,7 +6,6 @@ from typing import OrderedDict
 import torch
 
 from dataset import get_en_tokenizer, get_fr_tokenizer, tokenize
-from experiment import Experiment
 
 class Transformer(torch.nn.Module):
     MODEL_DIR = "trained-models/{exp_name}/{model_id}"

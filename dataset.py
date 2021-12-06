@@ -20,6 +20,14 @@ def get_fr_tokenizer():
         model_max_length=MAX_SEQ_LEN
     )
 
+def tokenize(tokenizer, text):
+    tokens = tokenizer.encode(
+        text,
+        padding="max_length",
+        return_tensors="pt"
+    )
+    return torch.squeeze(tokens)
+
 class En2FrDataset(torch.utils.data.IterableDataset):
     def __init__(self):
         self.en_tokenizer = get_en_tokenizer()
