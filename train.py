@@ -6,7 +6,6 @@ import torch.nn.functional as F
 
 from model import Transformer
 from dataset import En2FrDataset
-from experiment import Experiment
 
 def main():
     parser = argparse.ArgumentParser("Train a Transformer")
@@ -64,9 +63,8 @@ def main():
     )
     args = parser.parse_args()
     dataset = En2FrDataset()
-    experiment = Experiment(args=vars(args), name=args.exp_name)
-    experiment.record_args()
     model = Transformer(
+        exp_name=args.exp_name,
         n_encoder_layers=args.n_encoder_layers,
         n_decoder_layers=args.n_decoder_layers,
         d_model=args.d_model,
@@ -96,8 +94,7 @@ def main():
             if n_steps % 50 == 0:
                 print(f"Step = {n_steps}. Loss = {loss.item()}")
             if n_steps % 1000 == 0:
-                new_model_path = experiment.get_new_model_path()
-                model.save(new_model_path)
+                model.save()
 
 if __name__ == "__main__":
     main()
