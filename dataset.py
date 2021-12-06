@@ -20,7 +20,7 @@ def get_fr_tokenizer():
         model_max_length=MAX_SEQ_LEN
     )
 
-def tokenize(tokenizer, text):
+def tokenize(text, tokenizer):
     tokens = tokenizer.encode(
         text,
         padding="max_length",
@@ -49,18 +49,8 @@ class En2FrDataset(torch.utils.data.IterableDataset):
                 next_line = next(self.txt_file)
                 next_line = next_line.strip()
                 en_text, fr_text = next_line.split("\t")
-                en_tokens = dataset.en_tokenizer.encode(
-                    en_text,
-                    padding="max_length",
-                    return_tensors="pt"
-                )
-                en_tokens = torch.squeeze(en_tokens)
-                fr_tokens = dataset.fr_tokenizer.encode(
-                    fr_text,
-                    padding="max_length",
-                    return_tensors="pt"
-                )
-                fr_tokens = torch.squeeze(fr_tokens)
+                en_tokens = tokenize(en_text, dataset.en_tokenizer)
+                fr_tokens = tokenize(fr_text, dataset.fr_tokenizer)
                 return en_tokens, fr_tokens
         return En2FrIterator()
     
