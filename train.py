@@ -84,6 +84,7 @@ def main():
             x = x.to(device)
             y = y.to(device)
             y = torch.roll(y, shifts=-1, dims=1)
+            y[:,-1] = model.fr_tokenizer.pad_token_id
             y_one_hot = F.one_hot(y, num_classes=dataset.output_vocab_size)
             y_one_hot = y_one_hot.permute(0, 2, 1)
             y_one_hot = y_one_hot.float()
