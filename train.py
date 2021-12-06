@@ -95,7 +95,7 @@ def main():
             optim.step()
             if n_steps % 50 == 0:
                 print(f"Step = {n_steps}. Loss = {loss.item()}")
-            if n_steps % 1000 == 0:
+            if n_steps % 10000 == 0:
                 model.save()
 
 if __name__ == "__main__":
