@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime
 
 class Experiment():
     EXPERIMENT_DIR = "experiments/{name}"
@@ -9,12 +10,18 @@ class Experiment():
     def __init__(self, args, name):
         self.args = args
         self.name = name
+        assert not os.path.exists(self.experiment_dir)
 
     def record_args(self):
-        os.makedirs(os.path.dirname(self.args_path), exist_ok=True)
+        os.makedirs(os.path.dirname(self.args_path))
         str_args = json.dumps(self.args, indent=2)
         with open(self.args_path, "w") as args_file:
             args_file.write(str_args)
+
+    def get_new_model_path(self):
+        new_model_path = datetime.now().strftime("%Y-%m-%d_%M-%S.pt")
+        new_model_path = os.path.join(self.trained_models_dir, new_model_path)
+        return new_model_path
 
     @property
     def experiment_dir(self):
